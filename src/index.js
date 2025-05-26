@@ -22,7 +22,26 @@ app.get('/', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).send('Something broke!');
+  
+  // Determine the status code to send
+  const statusCode = err.statusCode || 500;
+  
+  // In production, don't send the full error details
+  const errorResponse = {
+    error: {
+      message: process.env.NODE_ENV === 'production' 
+        ? 'An error occurred while processing your request' 
+        : err.message,
+      status: statusCode
+    }
+  };
+  
+  // Include stack trace in development mode
+  if (process.env.NODE_ENV !== 'production') {
+    errorResponse.error.stack = err.stack;
+  }
+  
+  res.status(statusCode).json(errorResponse);
 });
 
 app.listen(PORT, () => {
